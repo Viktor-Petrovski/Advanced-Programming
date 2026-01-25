@@ -1,4 +1,6 @@
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class ResizableArrayTest {
 
@@ -246,6 +248,25 @@ public class ResizableArrayTest {
             return res;
         }
     
+    }
+
+    static class ArrayTransformer {
+        static <T, R> ResizableArray<R> map(ResizableArray<? extends T> source, Function<? super T, ? extends R> mapper) {
+            ResizableArray<R> res = new ResizableArray<>();
+            for (int i = 0; i < source.count(); i++) {
+                res.addElement(mapper.apply(source.elementAt(i)));
+            }
+            return res;
+        }
+
+        static <T> ResizableArray<T> filter(ResizableArray<? extends T> source, Predicate<? super T> predicate) {
+            ResizableArray<T> res = new ResizableArray<>();
+            for (int i = 0; i < source.count(); i++) {
+                if (predicate.test(source.elementAt(i)))
+                    res.addElement(source.elementAt(i));
+            }
+            return res;
+        }
     }
 
 }
