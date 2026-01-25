@@ -98,5 +98,45 @@ public class TermFrequencyTest {
                     .max(Comparator.comparingInt(String::length).thenComparing(Comparator.reverseOrder()))
                     .orElse("");
         }
+
+        /// кој ќе враќа мапа каде што клуч е првата буква од зборовите,
+        /// а вредност е листа од зборовите што започнуваат со таа буква.
+        /// Листите треба да бидат подредени азбучно.
+        public Map<Character, List<String>> groupByFirstLetter() {
+            return map.keySet().stream().collect(Collectors.groupingBy(
+                    s -> s.charAt(0),
+                    TreeMap::new,
+                    Collectors.collectingAndThen(
+                            Collectors.toCollection(TreeSet::new),
+                            ArrayList::new
+                    )
+            ));
+        }
+
+        /// кој ќе враќа мапа каде што клуч е префикс од дадена должина,
+        /// а вредност е бројот на зборови во текстот кои започнуваат со тој префикс.
+        /// Зборовите пократки од префиксот се игнорираат.
+        public Map<String, Integer> countPrefixes(int prefixLength) {
+            return map.entrySet().stream()
+                    .filter(e -> e.getKey().length() >= prefixLength)
+                    .collect(Collectors.groupingBy(
+                            e -> e.getKey().substring(0, prefixLength), Collectors.summingInt(Map.Entry::getValue)
+                            )
+                    );
+        }
+
+        /// кој ќе прави инверзија на мапата со фреквенции, така што фреквенцијата ќе биде клуч,
+        /// а сет од зборови со таа фреквенција ќе биде вредност. Сетовите треба да бидат подредени азбучно.
+        public Map<Integer, Set<String>> invertIndex() {
+            return map.entrySet().stream().collect(Collectors.groupingBy(
+                    Map.Entry::getValue,
+                    TreeMap::new,
+                    Collectors.mapping(
+                            Map.Entry::getKey,
+                            Collectors.toCollection(TreeSet::new)
+                    )
+            ));
+        }
+
     }
 }
