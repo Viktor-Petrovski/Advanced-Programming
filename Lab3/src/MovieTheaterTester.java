@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class MovieTheaterTester {
@@ -25,6 +26,14 @@ public class MovieTheaterTester {
             this.genre = genre;
             this.year = year;
             this.avgRating = avgRating;
+        }
+
+        public String getGenre() {
+            return genre;
+        }
+
+        public double getAvgRating() {
+            return avgRating;
         }
 
         @Override
@@ -73,6 +82,26 @@ public class MovieTheaterTester {
         void printByRatingAndTitle() {
             movieCollection.stream().sorted(Movie.BY_AVG_RATING.reversed().thenComparing(Movie.BY_TITLE)).forEach(System.out::println);
         } // - ги прикажува филмовите сортирани според оцена, па според наслов
+
+
+        /// враќа мапа на сите филмови каде клуч е жанрот на кој припаѓаат
+        Map<String, List<Movie>> groupByGenre() {
+            return movieCollection.stream().collect(Collectors.groupingBy(
+                    Movie::getGenre,
+                    TreeMap::new,
+                    Collectors.toCollection(ArrayList::new)
+            ));
+        }
+
+        /// враќа мапа на сите жанрови и сума на рејтинзите од филмовите. кои припаѓаат на нив
+        Map<String, Double> ratingByGenre() {
+            return movieCollection.stream().collect(Collectors.groupingBy(
+                    Movie::getGenre,
+                    TreeMap::new,
+                    Collectors.summingDouble(Movie::getAvgRating)
+            ));
+
+        }
 
     }
 }
