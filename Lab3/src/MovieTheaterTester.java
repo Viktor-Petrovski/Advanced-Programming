@@ -13,9 +13,25 @@ public class MovieTheaterTester {
         mt.printByGenreAndTitle();
         System.out.println("\nSORTING BY YEAR");
         mt.printByYearAndTitle();
+
+        // additional requirements test
+        System.out.println();
+        mt.groupByGenre().forEach((k, v) -> System.out.printf("k: %s, v: %s\n", k, v));
+
+        System.out.println();
+        mt.ratingByGenre().forEach((k, v) -> System.out.printf("k: %s, v: %s\n", k, v));
+
+        System.out.println();
+        mt.printBestMovieByGenre();
+
     }
 
     static class Movie {
+        private final static Map<String, Set<String>> actorsByMovie;
+        static {
+            actorsByMovie = new HashMap<>();
+        }
+
         private final String title;
         private final String genre;
         private final int year;
@@ -36,6 +52,10 @@ public class MovieTheaterTester {
             return avgRating;
         }
 
+        static void addActors(String movieTitle, List<String> actors) {
+            actorsByMovie.computeIfAbsent(movieTitle, k -> new HashSet<>()).addAll(actors);
+        }
+
         @Override
         public String toString() {
             return String.format("%s, %s, %d, %.2f", title, genre, year, avgRating);
@@ -49,9 +69,11 @@ public class MovieTheaterTester {
 
     static class MovieTheater {
         private final Collection<Movie> movieCollection;
+        private final Map<String, Movie> bestMovieByGenre; // genre -> movie with the best avg rating
 
         MovieTheater() {
             movieCollection = new ArrayList<>();
+            bestMovieByGenre = new TreeMap<>();
         }
 
         void readMovies() {
@@ -65,8 +87,13 @@ public class MovieTheaterTester {
                 String ratings = sc.nextLine().trim();
                 double avgRating = Arrays.stream(ratings.split(" ")).mapToInt(Integer::parseInt).average().orElse(.0);
 
-                movieCollection.add(new Movie(title, genre, year, avgRating));
+                Movie ins = new Movie(title, genre, year, avgRating);
+                movieCollection.add(ins);
 
+                bestMovieByGenre.putIfAbsent(genre, ins);
+
+                if (bestMovieByGenre.get(genre).getAvgRating() < ins.getAvgRating())
+                    bestMovieByGenre.put(genre, ins);
             }
         }
 
@@ -100,8 +127,13 @@ public class MovieTheaterTester {
                     TreeMap::new,
                     Collectors.summingDouble(Movie::getAvgRating)
             ));
-
         }
 
+        void printBestMovieByGenre() {
+            Comparator<Map.Entry<String, Movie>> comparator = Comparator.comparing(e -> e.getValue().getAvgRating());
+
+            bestMovieByGenre.entrySet().stream().sorted(comparator.reversed())
+                    .forEach(e -> System.out.printf("Genre: %s - Best Movie: %s\n", e.getKey(), e.getValue()));
+        }
     }
 }
