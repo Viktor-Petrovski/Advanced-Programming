@@ -72,18 +72,15 @@ public class TermFrequencyTest {
         /// а вредност е листа од зборови кои се појавуваат точно толку пати.
         /// Листите на зборови треба да бидат подредени азбучно, а фреквенциите треба да бидат подредени опаѓачки
         public Map<Integer, List<String>> byFrequency() {
-
-            Map<Integer, List<String>> res = map.entrySet().stream().collect(Collectors.groupingBy(
-                    Map.Entry::getValue,
-                    () -> new TreeMap<>(Comparator.reverseOrder()),
-                    Collectors.mapping(
-                            Map.Entry::getKey,
-                            Collectors.toCollection(ArrayList::new)
-                    )
-            ));
-            res.values().forEach(l -> l.sort(Comparator.naturalOrder()));
-
-            return res;
+            return map.entrySet().stream()
+                    .collect(Collectors.groupingBy(
+                            Map.Entry::getValue,
+                            () -> new TreeMap<Integer, List<String>>(Comparator.reverseOrder()),
+                            Collectors.mapping(
+                                    Map.Entry::getKey,
+                                    Collectors.toList()
+                            )
+                    ));
         }
 
         /// кој ќе враќа сет од сите стоп-зборови кои навистина се појавиле во текстот (иако не се бројат во статистиката).

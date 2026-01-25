@@ -1,5 +1,6 @@
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class SetsTest {
@@ -58,6 +59,12 @@ public class SetsTest {
         }
 
         scanner.close();
+
+        // additional requirements test
+        System.out.println("Grade Distribution:");
+        System.out.println(faculty.getGradeDistribution());
+
+        faculty.printDistribution();
     }
 
     static class Student {
@@ -85,6 +92,10 @@ public class SetsTest {
             return id;
         }
 
+        public List<Integer> getGrades() {
+            return grades;
+        }
+
         private int passed() {
             return grades.size();
         }
@@ -97,8 +108,6 @@ public class SetsTest {
         public static final Comparator<Student> BY_PASSED = Comparator.comparing(Student::passed);
         public static final Comparator<Student> BY_AVG = Comparator.comparing(Student::getAvg);
         
-        public static final Comparator<Student> FIRST = BY_PASSED.thenComparing(BY_AVG)
-                .thenComparing(BY_ID).reversed();
     }
 
     static class Faculty {
@@ -141,5 +150,24 @@ public class SetsTest {
                     .collect(Collectors.toCollection(() -> new TreeSet<>(comparator)));
         }
 
+        /// кој ја враќа распределбата на оценки сортирани според оценката во растечки редослед.
+        /// доколку некоја оценка не е застапена, треба да се внесе во мапата со вредност 0.
+        Map<Integer, Integer> getGradeDistribution() {
+            Map<Integer, Integer> distribution = studentMap.values().stream()
+                    .flatMap(s -> s.getGrades().stream())
+                    .collect(Collectors.groupingBy(
+                            i -> i,
+                            TreeMap::new,
+                            Collectors.summingInt(i -> 1)
+                    ));
+
+            IntStream.range(5, 11).forEach(i -> distribution.putIfAbsent(i, 0));
+            return distribution;
+        }
+
+        void printDistribution() {
+            Map<Integer, Integer> distribution = getGradeDistribution();
+            distribution.forEach((key, value) -> System.out.printf("%2d: %s\n", key, "-".repeat(value * 3)));
+        }
     }
 }
