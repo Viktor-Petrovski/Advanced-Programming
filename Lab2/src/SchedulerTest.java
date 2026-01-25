@@ -2,6 +2,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class SchedulerTest {
@@ -184,6 +186,30 @@ public class SchedulerTest {
             return timestamps.stream()
                     .filter(t -> t.getTime().isAfter(begin) && t.getTime().isBefore(end))
                     .collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        static <T, R> Scheduler<R> map(Scheduler<T> source, Function<? super Timestamp<T>, Timestamp<R>> mapper, Predicate<? super Timestamp<T>> filter) {
+            Scheduler<R> result = new Scheduler<>();
+            source.timestamps.stream()
+                    .filter(filter)
+                    .map(mapper)
+                    .forEach(result::add);
+            return result;
+        }
+
+        long countIf(Scheduler<T> source, Predicate<? super Timestamp<T>> predicate) {
+            return source.timestamps.stream().filter(predicate).count();
+        }
+
+        static private <T> Timestamp<T> retrieve(Timestamp<? extends T> src) {
+            return new Timestamp<>(src.getTime(), src.getElement());
+        }
+
+        static <T> Scheduler<T> merge(Scheduler<? extends T> first, Scheduler<? extends T> second) {
+            Scheduler<T> result = new Scheduler<>();
+            first.timestamps.forEach(t -> result.add(retrieve(t)));
+            second.timestamps.forEach(t -> result.add(retrieve(t)));
+            return result;
         }
     }
 }
