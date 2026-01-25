@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -199,6 +200,14 @@ public class ResizableArrayTest {
                 dest.addElement(src.elementAt(i));
             }
         }
+
+        T reduce(ResizableArray<T> source, T identity, BinaryOperator<T> accumulator) {
+            T result = identity;
+            for (int i = 0; i < source.count(); i++)
+                result = accumulator.apply(result, source.elementAt(i));
+            return result;
+        }
+
     }
 
     static class IntegerArray extends ResizableArray<Integer> {
@@ -247,7 +256,6 @@ public class ResizableArrayTest {
 
             return res;
         }
-    
     }
 
     static class ArrayTransformer {
