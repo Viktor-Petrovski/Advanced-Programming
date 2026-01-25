@@ -25,14 +25,21 @@ public class TermFrequencyTest {
 
     static class TermFrequency {
         private final Map<String, Integer> map; // word -> occurrences
+        private final Set<String> includedStop;
 
         TermFrequency(String[] stop) {
             Set<String> stopWords = Arrays.stream(stop).collect(Collectors.toCollection(HashSet::new));
             map = new HashMap<>();
+            includedStop = new TreeSet<>();
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
             br.lines().flatMap(l -> Arrays.stream(l.split("\\s+")))
                     .map(TermFrequencyTest::clean)
+                    .filter(w -> { // овој филтер само за дополнителното барање го додадив (да не користам терминална операција)
+                        if (stopWords.contains(w))
+                            includedStop.add(w);
+                        return true;
+                    })
                     .filter(w -> !stopWords.contains(w))
                     .filter(w -> !w.isEmpty())
                     .forEach(w -> map.merge(w, 1, Integer::sum));
@@ -59,6 +66,37 @@ public class TermFrequencyTest {
                     .limit(10)
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        /// враќа мапа каде што клуч е бројот на појавувања на зборовите во текстот,
+        /// а вредност е листа од зборови кои се појавуваат точно толку пати.
+        /// Листите на зборови треба да бидат подредени азбучно, а фреквенциите треба да бидат подредени опаѓачки
+        public Map<Integer, List<String>> byFrequency() {
+
+            Map<Integer, List<String>> res = map.entrySet().stream().collect(Collectors.groupingBy(
+                    Map.Entry::getValue,
+                    () -> new TreeMap<>(Comparator.reverseOrder()),
+                    Collectors.mapping(
+                            Map.Entry::getKey,
+                            Collectors.toCollection(ArrayList::new)
+                    )
+            ));
+            res.values().forEach(l -> l.sort(Comparator.naturalOrder()));
+
+            return res;
+        }
+
+        /// кој ќе враќа сет од сите стоп-зборови кои навистина се појавиле во текстот (иако не се бројат во статистиката).
+        public Set<String> stopWordsUsed() {
+            return includedStop;
+        }
+
+        /// кој ќе го враќа најдолгиот збор што се појавува во текстот.
+        /// Во случај повеќе зборови да се со иста должина, да се врати оној што е лексикографски најмал.
+        public String longestWord() {
+            return map.keySet().stream()
+                    .max(Comparator.comparingInt(String::length).thenComparing(Comparator.reverseOrder()))
+                    .orElse("");
         }
     }
 }
