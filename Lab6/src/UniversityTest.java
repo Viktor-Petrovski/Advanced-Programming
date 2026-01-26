@@ -225,6 +225,31 @@ public class UniversityTest {
             return new University(res);
         }
 
+        /// кој враќа колку вкупно кредити носат сите курсеви
+        int getTotalCredits() {
+            return getCoursesStream().distinct().mapToInt(Course::getCredits).sum();
+        }
+
+        ///  кој враќа листа на департменти кои имаат барем еден тежок курс (курс кој надминува difficultyThreshold)
+        List<Department> getDepartmentsWithAtLeastOneHardCourse(int difficultyThreshold) {
+            return departments.stream()
+                    .filter(d -> d.getCourses().stream().anyMatch(c -> c.getDifficulty() > difficultyThreshold))
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        /// кој ги враќа сите курсеви кои имаат име што го содржи дадениот substring.
+        List<Course> getCoursesWithNameContaining(String substring) {
+            return getCoursesStream().distinct().filter(c -> c.getName().contains(substring))
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        /// кој ќе го врати департментот кој има курсеви со најголем просечен difficulty.
+        Optional<Department> getTopDepartmentByAverageDifficulty() {
+            return departments.stream().max(
+                    Comparator.comparingDouble(d -> d.getCourses().stream().mapToDouble(Course::getDifficulty).average().orElse(.0))
+            );
+        }
+
     }
 
     public static void main(String[] args) {
@@ -367,6 +392,17 @@ public class UniversityTest {
                 v.forEach(System.out::println);
             });
 
+        } else if (method.equals("getTotalCredits")) {
+            System.out.println(university.getTotalCredits());
+
+        } else if (method.equals("getDepartmentsWithAtLeastOneHardCourse")) {
+            System.out.println(university.getDepartmentsWithAtLeastOneHardCourse(sc.nextInt()));
+
+        } else if (method.equals("getCoursesWithNameContaining")) {
+            System.out.println(university.getCoursesWithNameContaining(sc.nextLine()));
+
+        } else if (method.equals("getTopDepartmentByAverageDifficulty")) {
+            System.out.println(university.getTopDepartmentByAverageDifficulty());
         } else {
             System.out.println("Unknown method!");
         }
