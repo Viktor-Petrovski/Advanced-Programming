@@ -67,6 +67,11 @@ public class LibraryTester {
                         break;
                     }
 
+                    case "getBooksWaitingListSize": {
+                        lib.getBooksWaitingListSize().forEach((k, v) -> System.out.printf("%s -> %d\n", k, v));
+                        break;
+                    }
+
                     default:
                         break;
                 }
@@ -342,5 +347,28 @@ public class LibraryTester {
                     )
             ));
         }
+
+        /// кој ќе врати мапа каде што клуч е името на авторот, а вредност е книгата што има најмногу позајмувања од тој автор.
+        Map<String, Optional<Book>> getTopBookPerAuthor() {
+            return bookMap.values().stream().collect(Collectors.groupingBy(
+                    Book::getAuthor,
+                    Collectors.maxBy(Comparator.comparing(Book::getTotalBorrows))
+            ));
+        }
+
+        /// кој ќе врати мапа каде клуч е ISBN бројот на книгата, а вредност е бројот на членови што чекаат на таа книга
+        /// (големина на waiting list). Резултатната мапа треба да биде сортирана според големината на листата за чекање (опаѓачки),
+        /// а ако е исто, според ISBN (растечки).
+        Map<String, Integer> getBooksWaitingListSize() {
+            Comparator<String> comparator = Comparator.comparing(s -> bookWaitingQueue.get(s).size());
+            return bookMap.values().stream()
+                    .collect(Collectors.toMap(
+                            Book::getIsbn,
+                            b -> bookWaitingQueue.get(b.getIsbn()).size(),
+                            (old, nu) -> old,
+                            () -> new TreeMap<>(comparator.reversed().thenComparing(s -> s))
+                    ));
+        }
+
     }
 }
