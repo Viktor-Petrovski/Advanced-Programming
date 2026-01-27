@@ -77,7 +77,7 @@ public class LibraryTester {
         }
     }
 
-    static class Book {
+    static class Book implements Comparable<Book> {
         private final String isbn;
         private final String title;
         private final String author;
@@ -122,7 +122,6 @@ public class LibraryTester {
         }
 
 
-
         @Override
         public String toString() {
             return String.format("%s - \"%s\" by %s (%d), available: %d, total borrows: %d",
@@ -132,6 +131,10 @@ public class LibraryTester {
         public static final Comparator<Book> BY_TOTAL_BORROWED_DESC_THEN_YEAR =
                 Comparator.comparing(Book::getTotalBorrows).reversed().thenComparing(Book::getYear);
 
+        @Override
+        public int compareTo(Book o) {
+            return title.compareTo(o.title);
+        }
     }
 
     static class Member {
@@ -312,6 +315,32 @@ public class LibraryTester {
                     ", memberMap=" + memberMap +
                     ", bookMap=" + bookMap +
                     '}';
+        }
+
+
+        // Additional requirements
+
+        /// кој ќе врати мапа во која за секоја книга е наведено колку пати била позајмувана, сортирана според насловот на книгата
+        Map<Book, Integer> getBooksAndNumberOfBorrowings() {
+            return bookMap.values().stream()
+                    .collect(Collectors.toMap(
+                            b -> b,
+                            Book::getTotalBorrows,
+                            (oldValue, newValue) -> oldValue,
+                            TreeMap::new)
+                    );
+        }
+
+        /// кој ќе врати мапа каде клуч е името на авторот, а вредност е TreeSet
+        /// што ги содржи ISBN броевите на сите книги кои ги има напишано тој автор.
+        Map<String, TreeSet<String>> getAuthorsWithBooks() {
+            return bookMap.values().stream().collect(Collectors.groupingBy(
+                    Book::getAuthor,
+                    Collectors.mapping(
+                            Book::getIsbn,
+                            Collectors.toCollection(TreeSet::new)
+                    )
+            ));
         }
     }
 }
