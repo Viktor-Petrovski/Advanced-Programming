@@ -72,6 +72,16 @@ public class LibraryTester {
                         break;
                     }
 
+                    case "getMembersGroupedByBorrowedCount": {
+                        lib.getMembersGroupedByBorrowedCount().forEach((k, v) -> System.out.printf("%s -> %s\n", k, v));
+                        break;
+                    }
+
+                    case "getMembersByBorrowActivity": {
+                        lib.getMembersByBorrowActivity().forEach((k, v) -> System.out.printf("%s -> %s\n", k, v));
+                        break;
+                    }
+
                     default:
                         break;
                 }
@@ -370,5 +380,60 @@ public class LibraryTester {
                     ));
         }
 
+        /// кој ќе ги групира сите членови во две групи, во зависност дали кога било имаат позајмено книга или не.
+        Map<Boolean, List<Member>> getMembersByBorrowActivity() {
+            return memberMap.values().stream().collect(Collectors.partitioningBy(m -> m.totalBorrows > 0));
+        }
+
+        /// кој ги групира членoвите според бројот на моментално позајмени книги.
+        /// Мапата треба да биде сортирана според бројот на позајмени книги опаѓачки.
+        Map<Integer, Set<Member>> getMembersGroupedByBorrowedCount() {
+            return memberMap.values().stream()
+                    .collect(Collectors.groupingBy(
+                            Member::getBorrowedNow,
+                            TreeMap::new,
+                            Collectors.toSet()
+                    ))
+                    .descendingMap(); // !IMPORTANT
+        }
+
+
+
     }
 }
+
+/*
+GrandLibrary
+registerMember M1 Leo
+registerMember M2 Nina
+registerMember M3 Pero
+registerMember M4 Davor
+registerMember M5 Jana
+registerMember M6 Silvana
+addBook A10 Hamlet Shakespeare 1603
+addBook A10 Hamlet Shakespeare 1603
+addBook A11 Macbeth Shakespeare 1606
+addBook A20 Odyssey Homer 800
+addBook A21 Iliad Homer 750
+addBook A30 Utopia More 1516
+addBook A40 Faust Goethe 1808
+addBook A40 Faust Goethe 1808
+borrowBook M1 A10
+borrowBook M2 A10
+borrowBook M3 A10
+borrowBook M4 A10
+returnBook M2 A10
+borrowBook M5 A11
+borrowBook M6 A10
+returnBook M1 A10
+borrowBook M2 A21
+borrowBook M3 A20
+borrowBook M4 A40
+returnBook M3 A20
+borrowBook M3 A40
+borrowBook M1 A30
+returnBook M4 A40
+borrowBook M4 A40
+borrowBook M5 A40
+then enter the name of the method
+ */
