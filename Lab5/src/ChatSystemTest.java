@@ -1,11 +1,14 @@
+import javax.swing.tree.TreePath;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class ChatSystemTest {
 
-    public static void main(String[] args) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, NoSuchRoomException {
+    public static void main(String[] args)
+            throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, NoSuchRoomException {
         Scanner jin = new Scanner(System.in);
         int k = jin.nextInt();
         if (k == 0) {
@@ -166,6 +169,23 @@ public class ChatSystemTest {
                 r.addUser(username);
                 users.get(username).add(r);
             });
+        }
+
+        /// кој враќа мапа каде клуч е username, а вредност е сет кој ги содржи сите соби каде корисникот е вклучен
+        Map<String, Set<String>> getAllRoomsByUsers() {
+            return users.entrySet().stream().collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> e.getValue().stream().map(ChatRoom::getName).collect(Collectors.toSet())
+            ));
+        }
+
+
+        /// враќа сортирана мапа според името на ChatRoom во опаѓачки редослед, а вредност е бројот на корисници во собата
+        Map<ChatRoom, Integer> getChatRoomStatistics() {
+            return rooms.values().stream().collect(Collectors.toMap(
+                    e -> e,
+                    ChatRoom::numUsers
+            ));
         }
     }
 
