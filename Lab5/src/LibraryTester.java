@@ -82,6 +82,26 @@ public class LibraryTester {
                         break;
                     }
 
+                    case "getTopBorrowersSummary": {
+                        lib.getTopBorrowersSummary().forEach((k, v) -> System.out.printf("%s -> %s\n", k, v));
+                        break;
+                    }
+
+                    case "getAuthorDemandAnalysis": {
+                        lib.getAuthorDemandAnalysis().forEach((k, v) -> System.out.printf("%s -> %.2f\n", k, v));
+                        break;
+                    }
+
+                    case "getAuthorSpecialist": {
+                        lib.getAuthorSpecialist(br.readLine()).ifPresent(System.out::println);
+                        break;
+                    }
+
+                    case "getBorrowActivityHeatmap": {
+                        lib.getBorrowActivityHeatmap().forEach((k, v) -> System.out.printf("%d books -> %d members\n", k, v));
+                        break;
+                    }
+
                     default:
                         break;
                 }
@@ -113,6 +133,10 @@ public class LibraryTester {
 
         public String getIsbn() {
             return isbn;
+        }
+
+        public String getTitle() {
+            return title;
         }
 
         public String getAuthor() {
@@ -158,6 +182,7 @@ public class LibraryTester {
 
         private int totalBorrows;
         private final Map<String, Book> borrowed;
+        private final Set<Book> hasBorrowed; // минато
 
         Member(String id, String name) {
             this.id = id;
@@ -165,6 +190,7 @@ public class LibraryTester {
 
             totalBorrows = 0;
             borrowed = new HashMap<>();
+            hasBorrowed = new HashSet<>();
         }
 
         public String getId() {
@@ -173,6 +199,10 @@ public class LibraryTester {
 
         public String getName() {
             return name;
+        }
+
+        public Set<Book> getHasBorrowed() {
+            return hasBorrowed;
         }
 
         boolean holdsBook(String isbn) {
@@ -185,6 +215,7 @@ public class LibraryTester {
         }
 
         Book returnBook(String isbn) {
+            hasBorrowed.add(borrowed.get(isbn));
             return borrowed.remove(isbn);
         }
 
@@ -398,6 +429,87 @@ public class LibraryTester {
         }
 
 
+        // AI генерирани проблеми за пракса :)
+        // Courtesy of Gemini
+
+        /**
+         * Generates a report of the most active borrowers in the system.
+         *  @return a Map where the key is the Member ID and the value is a list of
+         * Book Titles they have borrowed.
+         * @implNote
+         * 1. Only include members who have borrowed at least 3 books total.<br>
+         * 2. The map must be sorted by the total number of borrows (descending).<br>
+         * 3. The list of book titles must be sorted alphabetically.
+         */
+        Map<String, List<String>> getTopBorrowersSummary() {
+            Comparator<Map.Entry<String, ArrayList<String>>> comparator = Comparator.comparing(e -> e.getValue().size());
+            return memberMap.values().stream().filter(m -> m.getHasBorrowed().size() > 3)
+                    .collect(Collectors.toMap(
+                            Member::getId,
+                            m -> m.getHasBorrowed().stream().map(Book::getTitle).collect(Collectors.toCollection(ArrayList::new))
+                    )).entrySet().stream().sorted(comparator.reversed())
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+                            (x, y) -> x,
+                            LinkedHashMap::new // МНОГУ БИТНО, инаку нема да се задрже редоследот
+                    ));
+        }
+
+        /**
+         * Analyzes the demand for books based on their authors.
+         * @return a TreeMap where the key is the Author's Name and the value is the
+         * average waiting list size for all books written by that author.
+         * @implNote
+         * 1. Exclude authors who have fewer than 2 books in the library. <br>
+         * 2. The result must be sorted alphabetically by Author Name. <br>
+         * 3. The average value should be represented as a Double.
+         */
+        Map<String, Double> getAuthorDemandAnalysis() {
+            Map<String, TreeSet<String>> authorsWithBooks = getAuthorsWithBooks();
+
+            return authorsWithBooks.entrySet().stream().filter(e -> e.getValue().size() > 1)
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            e -> e.getValue().stream().map(bookWaitingQueue::get)
+                                    .mapToInt(Queue::size).average().orElse(.0),
+                            (x, y) -> x,
+                            TreeMap::new
+                    ));
+        }
+
+        /**
+         * Identifies the member who has the most experience with a specific author.
+         * @param author The author to search for
+         * @return an Optional containing the Member who has borrowed the highest
+         * number of books in that author.
+         * @implNote
+         * 1. If two members have the same borrow count for the author,
+         * choose the one with the smaller ID (older member).
+         * 2. Returns Optional.empty() if no books in that author have been borrowed.
+         */
+        Optional<Member> getAuthorSpecialist(String author) {
+            return memberMap.values().stream()
+                    .max(Comparator.comparing((Member m) -> m.getHasBorrowed().stream()
+                            .filter(b -> b.getAuthor().equals(author)).count())
+                            .thenComparing(Member::getId));
+        }
+
+        /**
+         * Creates a frequency distribution of current book borrows among members.
+         * @return a Map where the key is the number of currently borrowed books
+         * and the value is the total count of members in that bracket.
+         * @implNote
+         * 1. The map must be sorted by the number of books (the key) in ascending order.
+         * 2. Use Collectors.counting() for the frequency calculation.
+         */
+        Map<Integer, Long> getBorrowActivityHeatmap() {
+            return memberMap.values().stream().collect(Collectors.groupingBy(
+                    Member::getBorrowedNow,
+                    TreeMap::new,
+                    Collectors.counting()
+            ));
+        }
 
     }
 }
