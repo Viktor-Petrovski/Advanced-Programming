@@ -1,6 +1,3 @@
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -30,7 +27,17 @@ public class TextCounter {
                     '}';
         }
 
+        public int getLines() {
+            return lines;
+        }
 
+        public int getWords() {
+            return words;
+        }
+
+        public int getChars() {
+            return chars;
+        }
     }
 
 
@@ -97,6 +104,31 @@ public class TextCounter {
         });
 
         //TODO extract results from the List<Future>
+
+        /*
+        По завршување на конкурентната обработка на сите текстови, имплементирајте дополнителна
+        Callable задача која ќе ги агрегира резултатите од сите Counter објекти и ќе пресмета
+        вкупен број на линии, зборови и карактери за сите текстови заедно.
+        Задачата мора да се изврши преку истиот ExecutorService, да врати еден Counter со textId = -1,
+         и резултатот да се испечати по индивидуалните статистики.
+         */
+
+        Callable<Counter> aggregate = () -> {
+            int lines = results.stream().mapToInt(Counter::getLines).sum();
+            int words = results.stream().mapToInt(Counter::getWords).sum();
+            int chars = results.stream().mapToInt(Counter::getChars).sum();
+            return new Counter(-1, lines, words, chars);
+        };
+
+        Future<Counter> future = executor.submit(aggregate);
+        try {
+            Counter res = future.get(5, TimeUnit.SECONDS);
+            System.out.println("Aggregate -> " + res);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+        } catch (CancellationException e) {
+            System.out.println("Canceled task");
+        }
 
         executor.shutdown();
 
