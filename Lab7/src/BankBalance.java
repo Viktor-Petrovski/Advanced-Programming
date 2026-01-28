@@ -15,47 +15,60 @@ public class BankBalance {
             lock = new ReentrantLock();
         }
 
-        public boolean deposit(int amount) {
-            lock.lock();
-            try {
-                balance += amount;
-                return true;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        public boolean withdraw(int amount) {
-            lock.lock();
-            try {
-                if (balance >= amount) {
-                    balance -= amount;
+        public boolean deposit(int amount, long lockTimeoutMs) throws InterruptedException, TimeoutException {
+            if (lock.tryLock(lockTimeoutMs, TimeUnit.MILLISECONDS))
+                try {
+                    balance += amount;
                     return true;
+                } finally {
+                    lock.unlock();
                 }
-                return false;
-            } finally {
-                lock.unlock();
-            }
+            throw new TimeoutException("Could not acquire lock to deposit");
         }
 
-        public int getBalance() {
-            lock.lock();
-            try {
-                return balance;
-            } finally {
-                lock.unlock();
-            }
+        public boolean withdraw(int amount, long lockTimeoutMs) throws InterruptedException, TimeoutException {
+            if (lock.tryLock(lockTimeoutMs, TimeUnit.MILLISECONDS))
+                try {
+                    if (balance >= amount) {
+                        balance -= amount;
+                        return true;
+                    }
+                    return false;
+                } finally {
+                    lock.unlock();
+                }
+            throw new TimeoutException("Could not acquire lock to withdraw");
+        }
+
+        public int getBalance(long lockTimeoutMs) throws InterruptedException, TimeoutException {
+            if (lock.tryLock(lockTimeoutMs, TimeUnit.MILLISECONDS))
+                try {
+                    return balance;
+                } finally {
+                    lock.unlock();
+                }
+            throw new TimeoutException("Could not acquire lock to read balance");
         }
     }
 
     // Operation result
-    public static class OperationResult {
+    public static class OperationResult implements Comparable<OperationResult> {
         public final int operationId;
         public final boolean success;
 
         public OperationResult(int operationId, boolean success) {
             this.operationId = operationId;
             this.success = success;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Op: %d has %s", operationId, success ? "succeeded" : "failed");
+        }
+
+        @Override
+        public int compareTo(OperationResult o) {
+            return Integer.compare(operationId, o.operationId);
         }
     }
 
@@ -79,7 +92,7 @@ public class BankBalance {
             tasks.add(() -> {
                 Thread.sleep(300);
                 boolean success = type.equals("deposit") ?
-                        account.deposit(amount) : account.withdraw(amount);
+                        account.deposit(amount, lockTimeoutMs) : account.withdraw(amount, lockTimeoutMs);
                 return new OperationResult(operationId, success);
             });
         }
@@ -95,7 +108,25 @@ public class BankBalance {
         executor.shutdown();
 
         // Deterministic final balance
-        System.out.println("FINAL_BALANCE " + account.getBalance());
+        System.out.println("FINAL_BALANCE " + account.getBalance(lockTimeoutMs));
+
+        results.sort(Comparator.naturalOrder());
+        results.forEach(System.out::println);
     }
+
+        /*
+     Extend the program so that, in addition to printing the final balance,
+     it also prints a deterministic log of all operations,
+     showing whether each operation succeeded or failed.
+
+        Each operation must be logged exactly once, and the output must be ordered by operationId,
+         regardless of the order in which the tasks actually execute.
+
+        Constraints:
+
+        The solution must not rely on execution order or thread scheduling.
+        The output must always be deterministic for the same input.
+        All shared data structures used for logging must be thread-safe.
+     */
 
 }
