@@ -82,29 +82,8 @@ public class GenericMapTest {
     //D -> ke_polozam_NPNP
     //E -> 2022/2023
 
-    /// структурно aah функција
     private static String mask(String x, String y) {
-        if (!x.contains(y))
-            return x;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < x.length(); i++) {
-            boolean flag = false;
-
-            for (int j = i, z = 0; j < x.length() && z < y.length(); j++) {
-                if (x.charAt(j) != y.charAt(z++))
-                    break;
-                flag = z == y.length();
-            }
-
-            if (flag) {
-                sb.append("*".repeat(y.length()));
-                i += y.length() - 1; // TODO test
-                continue;
-            }
-
-            sb.append(x.charAt(i));
-        }
-        return sb.toString();
+        return x.replaceAll("(?i)" + y, "*".repeat(y.length()));
     }
 
     private static void readIntMap(Scanner sc, Map<Integer, Integer> map) {
